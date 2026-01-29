@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Custo GR</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:rgba(15, 23, 42, .10);
+      --shadow:0 10px 25px rgba(15, 23, 42, .08);
+      --radius:16px;
+      --accent:#2563eb;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:var(--text);
+      padding:22px;
+    }
+    a{color:var(--accent); text-decoration:none; font-weight:600}
+
+    .wrap{max-width:1200px; margin:0 auto;}
+    header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;}
+    .title{display:flex; align-items:baseline; gap:12px;}
+    h1{margin:0; font-size:22px}
+    .subtitle{color:var(--muted); font-size:13px}
+
+    .panel{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .panelHead{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:#ffffff;
+    }
+    .panelBody{padding:16px}
+
+    .filters{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap:10px;
+      width:100%;
+    }
+    .control{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    label{font-size:12px; color:var(--muted)}
+    select{
+      background:transparent;
+      border:none;
+      outline:none;
+      color:var(--text);
+      font-size:14px;
+    }
+    option{color:#0f172a}
+
+    .kpis{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap:12px;
+    }
+    .kpi{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
+    .kpi .k{color:var(--muted); font-size:12px}
+    .kpi .v{font-size:22px; font-weight:800; margin-top:6px}
+    .kpi .h{color:var(--muted); font-size:12px; margin-top:6px}
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:12px;
+    }
+    .card{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      min-height:260px;
+    }
+    .card h3{margin:0 0 10px 0; font-size:14px; color:var(--muted); font-weight:700}
+
+    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:14px;}
+    thead th{ text-align:left; font-size:12px; color:var(--muted); padding:10px 10px; border-bottom:1px solid var(--line); }
+    tbody td{ padding:10px 10px; border-bottom:1px solid rgba(255,255,255,.06); font-size:13px; }
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+    .pill{
+      display:inline-block;
+      padding:3px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#ffffff;
+      font-size:12px;
+      color:var(--text);
+      white-space:nowrap;
+    }
+
+    .grid2{ margin-top:12px; display:grid; grid-template-columns: 1fr; gap:12px; }
+
+    @media (max-width: 980px){
+      .filters{grid-template-columns:1fr}
+      .kpis{grid-template-columns:1fr 1fr}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <a href="index.html">⬅ Voltar</a>
+      <div>
+        <h1>💰 Custo GR</h1>
+        <div class="subtitle">Visão por empresa e mês (com filtros, KPIs, gráficos e tabela)</div>
+      </div>
+    </div>
+    <div class="subtitle" id="stamp"></div>
+  </header>
+
+  <div class="panel">
+    <div class="panelHead">
+      <div class="subtitle">Filtros</div>
+      <div class="subtitle" id="countInfo"></div>
+    </div>
+
+    <div class="panelBody">
+      <div class="filters">
+        <div class="control">
+          <label for="fAno">Ano</label>
+          <select id="fAno"></select>
+        </div>
+        <div class="control">
+          <label for="fEmpresa">Empresa</label>
+          <select id="fEmpresa"></select>
+        </div>
+        <div class="control">
+          <label for="fMes">Mês</label>
+          <select id="fMes"></select>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Pago em GR por mês (R$)</h3>
+          <canvas id="chartMes"></canvas>
+        </div>
+        <div class="card">
+          <h3>Distribuição do pago por empresa</h3>
+          <canvas id="chartEmpresa"></canvas>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Registros (filtrados)</h3>
+          <div style="overflow:auto; max-height:360px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ano</th>
+                  <th>Mês</th>
+                  <th>Empresa</th>
+                  <th>Pago (GR)</th>
+                  <th>Saldo (GR)</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div class="subtitle" style="margin-top:10px">Dica: se a base ficar grande, mantenha ~2.000 linhas no HTML e use paginação.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  /* =========================
+     Firebase
+     ========================= */
+  const firebaseConfig = {
+    apiKey: "AIzaSyD27g5d1fChDpR8e2EVBmYPnOr9HVMZEf0",
+    authDomain: "dashboard-gr-adm.firebaseapp.com",
+    projectId: "dashboard-gr-adm",
+    storageBucket: "dashboard-gr-adm.firebasestorage.app",
+    messagingSenderId: "509008344044",
+    appId: "1:509008344044:web:0148273507946420a206c9",
+    measurementId: "G-NEEJ2C6SB8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  /* =========================
+     1) Dados (agora via Firestore)
+     Coleção: custo_gr
+     Doc exemplo:
+     { ano:2025, empresa:"LIBFARMA", mes:"Jan", pago:21271.36, saldo:12762.81 }
+     ========================= */
+  let dados = [];
+
+  /* =========================
+     2) Utilitários
+     ========================= */
+  const mesesOrdem = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  function uniq(arr){ return Array.from(new Set(arr)); }
+  function fmtBRL(v){
+    return "R$ " + (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function sum(arr, key){ return arr.reduce((s,x)=>s+(Number(x?.[key])||0),0); }
+  function byMes(a,b){ return mesesOrdem.indexOf(a) - mesesOrdem.indexOf(b); }
+
+  document.getElementById("stamp").textContent =
+    "Atualizado: " + new Date().toLocaleString("pt-BR");
+
+  const fAno = document.getElementById("fAno");
+  const fEmpresa = document.getElementById("fEmpresa");
+  const fMes = document.getElementById("fMes");
+
+  function fillSelect(sel, items, allLabel){
+    sel.innerHTML = "";
+    const optAll = document.createElement("option");
+    optAll.value = "";
+    optAll.textContent = allLabel;
+    sel.appendChild(optAll);
+    items.forEach(x=>{
+      const o = document.createElement("option");
+      o.value = String(x);
+      o.textContent = String(x);
+      sel.appendChild(o);
+    });
+  }
+
+  /* =========================
+     3) Charts
+     ========================= */
+  let chMes, chEmpresa;
+  function buildOrUpdateChart(existing, ctx, config){
+    if (existing) existing.destroy();
+    return new Chart(ctx, config);
+  }
+
+  /* =========================
+     4) Render
+     ========================= */
+  function applyFilters(){
+    const ano = fAno.value ? Number(fAno.value) : null;
+    const emp = fEmpresa.value || null;
+    const mes = fMes.value || null;
+
+    const out = dados.filter(d=>{
+      if (ano && Number(d.ano) !== ano) return false;
+      if (emp && d.empresa !== emp) return false;
+      if (mes && d.mes !== mes) return false;
+      return true;
+    });
+
+    document.getElementById("countInfo").textContent = `${out.length} registro(s)`;
+    return out;
+  }
+
+  function renderKPIs(rows){
+    const totalPago = sum(rows, "pago");
+    const saldoTotal = sum(rows, "saldo");
+    const empresasAtivas = uniq(rows.map(r=>r.empresa)).filter(Boolean).length;
+    const pagoMedio = rows.length ? (totalPago / rows.length) : 0;
+
+    const cards = [
+      {k:"Pago em GR (total)", v:fmtBRL(totalPago), h:"Soma no filtro"},
+      {k:"Saldo GR (total)", v:fmtBRL(saldoTotal), h:"Soma no filtro"},
+      {k:"Empresas", v:String(empresasAtivas), h:"Qtd no filtro"},
+      {k:"Pago médio", v:fmtBRL(pagoMedio), h:"Média por registro"},
+    ];
+
+    const el = document.getElementById("kpis");
+    el.innerHTML = cards.map(c=>`
+      <div class="kpi">
+        <div class="k">${c.k}</div>
+        <div class="v">${c.v}</div>
+        <div class="h">${c.h}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderCharts(rows){
+    // Pago por mês (barra)
+    const porMes = {};
+    mesesOrdem.forEach(m=>porMes[m]=0);
+    rows.forEach(r=>{ porMes[r.mes] = (porMes[r.mes]||0) + (Number(r.pago)||0); });
+
+    const labelsMes = mesesOrdem.filter(m => (porMes[m]||0) > 0 || fMes.value==="");
+    const valsMes = labelsMes.map(m => porMes[m]||0);
+
+    chMes = buildOrUpdateChart(
+      chMes,
+      document.getElementById("chartMes"),
+      {
+        type:"bar",
+        data:{ labels: labelsMes, datasets:[{ data: valsMes }] },
+        options:{
+          responsive:true,
+          plugins:{ legend:{display:false} },
+          scales:{ y:{ ticks:{ callback:(v)=>"R$ "+Number(v).toLocaleString("pt-BR") } } }
+        }
+      }
+    );
+
+    // Pago por empresa (pie)
+    const porEmpresa = {};
+    rows.forEach(r=>{ porEmpresa[r.empresa] = (porEmpresa[r.empresa]||0) + (Number(r.pago)||0); });
+
+    const labelsEmp = Object.keys(porEmpresa);
+    const valsEmp = Object.values(porEmpresa);
+
+    chEmpresa = buildOrUpdateChart(
+      chEmpresa,
+      document.getElementById("chartEmpresa"),
+      {
+        type:"pie",
+        data:{ labels: labelsEmp, datasets:[{ data: valsEmp }] },
+        options:{ responsive:true, plugins:{ legend:{ position:"bottom" } } }
+      }
+    );
+  }
+
+  function renderTable(rows){
+    const tbody = document.getElementById("tbody");
+
+    const sorted = [...rows].sort((a,b)=>{
+      if (Number(a.ano) !== Number(b.ano)) return Number(b.ano) - Number(a.ano);
+      return mesesOrdem.indexOf(a.mes) - mesesOrdem.indexOf(b.mes);
+    });
+
+    tbody.innerHTML = sorted.map(r=>`
+      <tr>
+        <td>${r.ano ?? "—"}</td>
+        <td><span class="pill">${r.mes ?? "—"}</span></td>
+        <td><span class="pill">${r.empresa ?? "—"}</span></td>
+        <td>${fmtBRL(r.pago)}</td>
+        <td>${fmtBRL(r.saldo)}</td>
+      </tr>
+    `).join("");
+  }
+
+  function render(){
+    const rows = applyFilters();
+    renderKPIs(rows);
+    renderCharts(rows);
+    renderTable(rows);
+  }
+
+  function rebuildFilters(){
+    const anos = uniq(dados.map(d=>d.ano)).filter(Boolean).sort((a,b)=>b-a);
+    const empresas = uniq(dados.map(d=>d.empresa)).filter(Boolean).sort();
+    const meses = uniq(dados.map(d=>d.mes)).filter(Boolean).sort(byMes);
+
+    fillSelect(fAno, anos, "Todos os anos");
+    fillSelect(fEmpresa, empresas, "Todas as empresas");
+    fillSelect(fMes, meses, "Todos os meses");
+
+    if (anos.length) fAno.value = String(anos[0]);
+  }
+
+  async function load(){
+    document.getElementById("countInfo").textContent = "Carregando...";
+
+    const snap = await getDocs(collection(db, "custo_gr"));
+    dados = snap.docs.map(d=>{
+      const x = d.data() || {};
+      return {
+        ano: Number(x.ano) || null,
+        empresa: (x.empresa || "").toString().trim(),
+        mes: (x.mes || "").toString().trim(),
+        pago: Number(x.pago) || 0,
+        saldo: Number(x.saldo) || 0,
+      };
+    }).filter(x => x.ano && x.empresa && x.mes);
+
+    rebuildFilters();
+
+    [fAno, fEmpresa, fMes].forEach(el => el.addEventListener("change", render));
+
+    render();
+  }
+
+  load().catch(err=>{
+    console.error(err);
+    document.getElementById("countInfo").textContent = "Erro ao carregar";
+  });
+</script>
+</body>
+</html>

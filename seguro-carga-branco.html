@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seguro de Carga</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:rgba(15, 23, 42, .10);
+      --shadow:0 10px 25px rgba(15, 23, 42, .08);
+      --radius:16px;
+      --accent:#2563eb;
+      --ok:#16a34a;
+      --warn:#d97706;
+      --bad:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:var(--text);
+      padding:22px;
+    }
+    a{color:var(--accent); text-decoration:none; font-weight:600}
+    .wrap{max-width:1200px; margin:0 auto;}
+
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-bottom:16px;
+    }
+    .title{display:flex; align-items:baseline; gap:12px;}
+    h1{margin:0; font-size:22px}
+    .subtitle{color:var(--muted); font-size:13px}
+
+    .panel{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .panelHead{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background:#ffffff;
+    }
+    .panelBody{padding:16px}
+
+    .filters{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap:10px;
+      width:100%;
+    }
+    .control{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    label{font-size:12px; color:var(--muted)}
+    select, input{
+      background:transparent;
+      border:none;
+      outline:none;
+      color:var(--text);
+      font-size:14px;
+    }
+    option{color:#0f172a}
+
+    .kpis{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: repeat(5, minmax(180px, 1fr));
+      gap:12px;
+    }
+    .kpi{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
+    .kpi .k{color:var(--muted); font-size:12px}
+    .kpi .v{font-size:22px; font-weight:800; margin-top:6px}
+    .kpi .h{color:var(--muted); font-size:12px; margin-top:6px}
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap:12px;
+    }
+    .card{
+      background:#ffffff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      min-height:260px;
+    }
+    .card h3{margin:0 0 10px 0; font-size:14px; color:var(--muted); font-weight:700}
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      overflow:hidden;
+      border-radius:14px;
+    }
+    thead th{
+      text-align:left;
+      font-size:12px;
+      color:var(--muted);
+      padding:10px 10px;
+      border-bottom:1px solid var(--line);
+    }
+    tbody td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+    }
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+
+    .pill{
+      display:inline-block;
+      padding:3px 9px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#ffffff;
+      font-size:12px;
+      color:var(--text);
+      white-space:nowrap;
+    }
+
+    @media (max-width: 980px){
+      .filters{grid-template-columns:1fr}
+      .kpis{grid-template-columns:1fr 1fr}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">
+      <a href="index.html">⬅ Voltar</a>
+      <div>
+        <h1>📦 Seguro de Carga</h1>
+        <div class="subtitle">KPIs, filtros, gráficos e tabela</div>
+      </div>
+    </div>
+    <div class="subtitle" id="stamp"></div>
+  </header>
+
+  <div class="panel">
+    <div class="panelHead">
+      <div class="subtitle">Filtros</div>
+      <div class="subtitle" id="countInfo"></div>
+    </div>
+
+    <div class="panelBody">
+      <div class="filters">
+        <div class="control">
+          <label for="fAno">Ano</label>
+          <select id="fAno"></select>
+        </div>
+        <div class="control">
+          <label for="fSeguradora">Seguradora</label>
+          <select id="fSeguradora"></select>
+        </div>
+        <div class="control">
+          <label for="fVenc">Vencimento</label>
+          <select id="fVenc"></select>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Valor segurado por vencimento (R$)</h3>
+          <canvas id="chartVenc"></canvas>
+        </div>
+        <div class="card">
+          <h3>Distribuição por seguradora</h3>
+          <canvas id="chartSeg"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h3>Registros (filtrados)</h3>
+        <div style="overflow:auto; max-height:360px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Ano</th>
+                <th>Seguradora</th>
+                <th>Vencimento</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="subtitle" style="margin-top:10px">Dica: mantenha no máximo ~2.000 linhas no HTML para ficar leve.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD27g5d1fChDpR8e2EVBmYPnOr9HVMZEf0",
+    authDomain: "dashboard-gr-adm.firebaseapp.com",
+    projectId: "dashboard-gr-adm",
+    storageBucket: "dashboard-gr-adm.firebasestorage.app",
+    messagingSenderId: "509008344044",
+    appId: "1:509008344044:web:0148273507946420a206c9",
+    measurementId: "G-NEEJ2C6SB8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  /* =========================
+     1) Dados (Firebase)
+     Coleção: seguros
+     Campos:
+     { ano:2025, seguradora:"Porto Seguro", valor:500000, vencimento:"Jan" }
+     ========================= */
+  let seguros = [];
+
+  async function loadSeguros(){
+    try{
+      document.getElementById("countInfo").textContent = "Carregando...";
+      const snap = await getDocs(collection(db, "seguros"));
+      seguros = snap.docs.map(d => d.data()).filter(Boolean);
+    }catch(err){
+      console.error(err);
+      seguros = [];
+    }
+  }
+
+  /* =========================
+     2) Utilitários
+     ========================= */
+  const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  function uniq(arr){ return Array.from(new Set(arr)); }
+  function fmtBRL(v){ return "R$ " + (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  document.getElementById("stamp").textContent =
+    "Atualizado: " + new Date().toLocaleString("pt-BR");
+
+  /* =========================
+     3) Build filtros
+     ========================= */
+  const fAno = document.getElementById("fAno");
+  const fSeg = document.getElementById("fSeguradora");
+  const fVenc = document.getElementById("fVenc");
+
+  function fillSelect(sel, items, allLabel){
+    sel.innerHTML = "";
+    const optAll = document.createElement("option");
+    optAll.value = "";
+    optAll.textContent = allLabel;
+    sel.appendChild(optAll);
+    items.forEach(x=>{
+      const o = document.createElement("option");
+      o.value = x;
+      o.textContent = x;
+      sel.appendChild(o);
+    });
+  }
+
+  function buildFilters(){
+    const anos = uniq(seguros.map(s => Number(s.ano))).filter(Boolean).sort((a,b)=>b-a);
+    const seguradoras = uniq(seguros.map(s => s.seguradora)).filter(Boolean).sort();
+    const vencs = meses.filter(m => seguros.some(s => s.vencimento === m));
+
+    fillSelect(fAno, anos, "Todos os anos");
+    fillSelect(fSeg, seguradoras, "Todas as seguradoras");
+    fillSelect(fVenc, vencs, "Todos os vencimentos");
+
+    if (anos.length) fAno.value = String(anos[0]);
+  }
+
+  /* =========================
+     4) Charts
+     ========================= */
+  let chVenc, chSeg;
+  function buildOrUpdateChart(existing, ctx, config){
+    if (existing) existing.destroy();
+    return new Chart(ctx, config);
+  }
+
+  /* =========================
+     5) Render
+     ========================= */
+  function applyFilters(){
+    const ano = fAno.value ? Number(fAno.value) : null;
+    const seg = fSeg.value || null;
+    const venc = fVenc.value || null;
+
+    const out = seguros.filter(s => {
+      if (ano && Number(s.ano) !== ano) return false;
+      if (seg && s.seguradora !== seg) return false;
+      if (venc && s.vencimento !== venc) return false;
+      return true;
+    });
+
+    document.getElementById("countInfo").textContent = `${out.length} registro(s)`;
+    return out;
+  }
+
+  function renderKPIs(rows){
+    const totalApolices = rows.length;
+    const valorTotal = rows.reduce((sum,r)=>sum+(Number(r.valor)||0),0);
+    const ticketMedio = totalApolices ? (valorTotal/totalApolices) : 0;
+
+    const porSeg = {};
+    rows.forEach(r => {
+      const k = (r.seguradora || "Não informado").toString().trim();
+      porSeg[k] = (porSeg[k]||0) + (Number(r.valor)||0);
+    });
+    const topSeg = Object.entries(porSeg).sort((a,b)=>b[1]-a[1])[0];
+
+    const porVenc = {};
+    rows.forEach(r => {
+      const k = (r.vencimento || "-").toString().trim();
+      porVenc[k] = (porVenc[k]||0) + (Number(r.valor)||0);
+    });
+    const topVenc = Object.entries(porVenc).sort((a,b)=>b[1]-a[1])[0];
+
+    const cards = [
+      {k:"Total de apólices", v:String(totalApolices), h:"Contagem no filtro"},
+      {k:"Valor segurado total", v:fmtBRL(valorTotal), h:"Soma no filtro"},
+      {k:"Ticket médio", v:fmtBRL(ticketMedio), h:"Média por apólice"},
+      {k:"Top seguradora (R$)", v: topSeg ? `${topSeg[0]}` : "—", h: topSeg ? fmtBRL(topSeg[1]) : "—"},
+      {k:"Top vencimento (R$)", v: topVenc ? `${topVenc[0]}` : "—", h: topVenc ? fmtBRL(topVenc[1]) : "—"},
+    ];
+
+    const el = document.getElementById("kpis");
+    el.innerHTML = cards.map(c=>`
+      <div class="kpi">
+        <div class="k">${c.k}</div>
+        <div class="v">${c.v}</div>
+        <div class="h">${c.h}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderCharts(rows){
+    const vAgg = {};
+    meses.forEach(m=> vAgg[m] = 0);
+    rows.forEach(r => { vAgg[r.vencimento] = (vAgg[r.vencimento]||0) + (Number(r.valor)||0); });
+
+    const labelsV = meses.filter(m => (vAgg[m]||0) > 0);
+    const valuesV = labelsV.map(m => vAgg[m]);
+
+    chVenc = buildOrUpdateChart(
+      chVenc,
+      document.getElementById("chartVenc"),
+      {
+        type:"bar",
+        data:{ labels:labelsV, datasets:[{ label:"Valor (R$)", data:valuesV }] },
+        options:{
+          responsive:true,
+          plugins:{ legend:{display:false} },
+          scales:{ y:{ ticks:{ callback:(v)=>"R$ "+Number(v).toLocaleString("pt-BR") } } }
+        }
+      }
+    );
+
+    const porSeg = {};
+    rows.forEach(r => {
+      const k = (r.seguradora || "Não informado").toString().trim();
+      porSeg[k] = (porSeg[k]||0) + (Number(r.valor)||0);
+    });
+
+    chSeg = buildOrUpdateChart(
+      chSeg,
+      document.getElementById("chartSeg"),
+      {
+        type:"pie",
+        data:{ labels:Object.keys(porSeg), datasets:[{ data:Object.values(porSeg) }] },
+        options:{ responsive:true, plugins:{ legend:{position:"bottom"} } }
+      }
+    );
+  }
+
+  function renderTable(rows){
+    const tbody = document.getElementById("tbody");
+    const sorted = [...rows].sort((a,b)=>{
+      const ia = meses.indexOf(a.vencimento);
+      const ib = meses.indexOf(b.vencimento);
+      if (ib !== ia) return ib - ia;
+      return String(a.seguradora||"").localeCompare(String(b.seguradora||""));
+    }).slice(0,200);
+
+    tbody.innerHTML = sorted.map(r=>`
+      <tr>
+        <td>${r.ano ?? "—"}</td>
+        <td><span class="pill">${r.seguradora || "—"}</span></td>
+        <td><span class="pill">${r.vencimento || "—"}</span></td>
+        <td>${fmtBRL(r.valor)}</td>
+      </tr>
+    `).join("");
+  }
+
+  function render(){
+    const rows = applyFilters();
+    renderKPIs(rows);
+    renderCharts(rows);
+    renderTable(rows);
+  }
+
+  async function init(){
+    await loadSeguros();
+    buildFilters();
+    [fAno, fSeg, fVenc].forEach(el => el.addEventListener("change", render));
+    render();
+  }
+
+  init();
+</script>
+</body>
+</html>
